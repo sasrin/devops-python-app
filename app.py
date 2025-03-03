@@ -1,5 +1,5 @@
 def get_message():
     return "Hello, DevOps!"
 
-if _name_ == "_main_":
+if __name__ == "_main_":
     print(get_message())
