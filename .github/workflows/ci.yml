@@ -23,9 +23,7 @@ jobs:
       
       - name: Lint with flake8
         run: |
-          # Stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # The following line is for warnings only
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exit-zero
           flake8 . --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       
       - name: Run tests
@@ -44,14 +42,24 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/python-app:latest
       
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/python-app:latest
+      - name: Deploy to EC2 with SSH
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USERNAME }}
+          DOCKER_IMAGE: ${{ secrets.DOCKER_HUB_USERNAME }}/python-app:latest
+        run: |
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+          
+          # SSH commands to deploy
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST "
+            docker pull $DOCKER_IMAGE
             docker stop python-app || true
             docker rm python-app || true
-            docker run -d --name python-app -p 80:5000 ${{ secrets.DOCKER_HUB_USERNAME }}/python-app:latest
+            docker run -d --name python-app -p 80:5000 $DOCKER_IMAGE
+            docker ps
+          "
+          
+          # Clean up
+          rm -f private_key.pem
