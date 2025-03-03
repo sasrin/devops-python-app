@@ -7,5 +7,5 @@ def hello():
     return "Hello, DevOps!"
 
 if __name__ == "_main_":
-    # Run the app on 0.0.0.0 to make it accessible outside the container
-    app.run(host='0.0.0.0', port=5000)
+    print("Starting Flask server on http://0.0.0.0:5000")
+    app.run(host='0.0.0.0', port=5000, debug=True)
